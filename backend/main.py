@@ -19,6 +19,12 @@ app = FastAPI()
 class AnalyzeRequest(BaseModel):
 	paragraphs: List[str]
 
+# Expose Render stuff   
+@app.get("/")
+async def root():
+
+	return {"status": "OK", "message": "FastAPI is running on Render"}
+
 """
 Call the bias analysis function from the fetched paragraphs
 
@@ -31,14 +37,3 @@ may be needed for context
 @app.post("/api/analyze-bias")
 async def analyzeBiasEndpoint(req: AnalyzeRequest):
 	return analyzeBias(req.paragraphs)
-   
-# Expose Render stuff   
-@app.get("/")
-def root():
-
-	return {"status": "OK", "message": "FastAPI is running on Render"}
-
-
-
-
-
