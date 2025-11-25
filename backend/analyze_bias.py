@@ -97,7 +97,7 @@ Rules:
 					}
 				],
 				temperature=0.0,
-				max_output_tokens=4096,
+				max_output_tokens=200000,
 			)
 	except Exception as e:
 		print("!! LLM ERROR !!", repr(e))
@@ -171,6 +171,7 @@ def analyzeBias(paragraphs: List[str]) -> List[Dict[str, Any]]:
 
 	print("[Log] Done!")
 	return merged
+
 
 
 
