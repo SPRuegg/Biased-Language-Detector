@@ -26,8 +26,11 @@ Calls the OpenAI LLM with a specialized prompt.
 """
 def callBiasLLM(llmItems: List[Dict]) -> List[Dict]:
 	if not llmItems:
+		print("[Log] No items to analyze.", flush=True)
 		return []
 
+	print("[Log] Analyzing...")
+	
 	systemPrompt = """
 You are a content analysis engine that detects bias and argumentative fallacies in text.
 
@@ -94,10 +97,11 @@ Rules:
 					}
 				],
 				temperature=0.0,
-				max_output_tokens=200000,
+				max_output_tokens=4096,
 			)
 	except Exception as e:
-		raise RuntimeError(f"[Log] LLM Error...") from e
+		print("[LLM ERROR]", repr(e), flush=True)
+		raise
 
 	# Fetch LLM response text
 	outputText = response.output[0].content[0].text
@@ -126,7 +130,7 @@ Analyzes bias from an array of string inputs.
 @returns {object[]} - JSON data to be parsed by the frontend
 """
 def analyzeBias(paragraphs: List[str]) -> List[Dict[str, Any]]:
-	print("[Log] Analyzing...")
+	print("[Log] Starting analyzis...")
 	results: Dict[int, Dict[str, Any]] = {}
 	llmItems: List[Dict[str, Any]] = []
 
@@ -165,6 +169,7 @@ def analyzeBias(paragraphs: List[str]) -> List[Dict[str, Any]]:
 
 	print("[Log] Done!")
 	return merged
+
 
 
 
