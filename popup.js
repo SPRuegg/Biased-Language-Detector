@@ -33,7 +33,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
 	// Validate that the tab is a valid news article URL using regex
 	if (url.includes("bbc.co.uk") || url.includes("bbc.com")) {
 		site = 'bbc';
-	} else if (url.includes("nbc.com") || url.includes("nbcnews.com")) {
+	} else if (url.includes("nbc") || url.includes("nbcnews.com")) {
 		site = 'nbc';
 	} else if (url.includes("cbsnews.com")) {
 		site = 'cbs';
@@ -62,16 +62,20 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
 			func: () => document.documentElement.outerHTML
 		});
 
-		// Create hidden iframe to safely parse HTML without polluting popup DOM
+		// Parse HTML source (remove scripts to avoid CSP violations)
+		const domparser = new DOMParser();
+		const docHTML = domparser.parseFromString(html, 'text/html');
+		docHTML.querySelectorAll('script').forEach(s => s.remove());
+
+		// Create iframe context
 		const iframe = document.createElement('iframe');
 		iframe.style.display = 'none';
 		document.body.appendChild(iframe);
 
+		// Write HTML to new iframe context
 		const doc = iframe.contentDocument;
-
-		// Write the scraped HTML into the new iframe context
 		doc.open();
-		doc.write(html);
+		doc.write(docHTML.documentElement.outerHTML);
 		doc.close();
 
 		// Load scripts
@@ -106,23 +110,28 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
 
 				// If parser function exists, call it
 				if (parserFunc) {
-					const result = parserFunc(doc);
+					const result = parserFunc();
 
-					// If returned text is array, use directly
-					if (Array.isArray(result?.text)) {
-						paragraphs = result.text;
+					if (Array.isArray(result)) {
+						console.log("[Parser] Parsing...");
+						paragraphs = result
+						.filter(
+							item =>
+								item &&
+								// Check for strings
+								typeof item.text === "string" &&
+								item.text.trim() &&
+								// Ignore non-text items
+								item.type !== "image" && item.type !== "video" && item.type !== "embed"
+						)
+						.map(item => item.text.trim());
 					}
-					// If returned text is string, split into paragraphs by blank lines
-					else if (typeof result?.text === 'string') {
-						paragraphs = result.text
-							.split(/\n+/) // Split on newlines
-							.map(p => p.trim()) // Trim whitespace
-							.filter(Boolean); // Remove empty lines
-					}
+					
+					console.log("[Parser] Specialized parser results:", paragraphs);
 				}
-
+				
 				// Backup parser that just extracts all paragraph elements, in case specialized parser does not work
-				if (paragraphs.length === 0) {
+				if (!paragraphs || paragraphs.length === 0) {
 					console.warn('[Parser] Falling back to raw paragraph scraping.');
 
 					// Try to detect primary article container elements
@@ -136,6 +145,8 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
 							.map(p => p.innerText.trim())
 							.filter(Boolean);
 					}
+					
+					console.log("[Parser] Backup parser results:", paragraphs);
 				}
 				
 				// Display bias results to user

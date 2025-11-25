@@ -27,6 +27,7 @@ async function analyzeBias(paragraphs) {
 		// annotations: [{ index, text, label, reason }, ...]
 		const annotations = await response.json();
 		renderBiasResults(annotations);
+		console.log("[Analysis] Bias analysis complete.");
 	} catch (error) {
 		console.error(error);
 		output.textContent = "Failed to reach bias analysis.";
