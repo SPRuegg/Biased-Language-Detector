@@ -21,7 +21,7 @@ function parseMetadata() {
   const metadataScript = document.querySelector('script[type="application/ld+json"]');
 
   if (!metadataScript) {
-    console.error("Could not find the JSON-LD metadata script.");
+    console.error("[Parser] Could not find the JSON-LD metadata script.");
     return null;
   }
 
@@ -30,7 +30,7 @@ function parseMetadata() {
     const metadataArray = JSON.parse(metadataScript.textContent);
 
     if (!Array.isArray(metadataArray) || metadataArray.length === 0) {
-      console.error("JSON-LD metadata is not an array or is empty.");
+      console.error("[Parser] JSON-LD metadata is not an array or is empty.");
       return null;
     }
 
@@ -48,7 +48,7 @@ function parseMetadata() {
       dateModified: metadata.dateModified || "Date modified not found",
     };
   } catch (error) {
-    console.error("Failed to parse JSON-LD metadata:", error);
+    console.error("[Parser] Failed to parse JSON-LD metadata:", error);
     return null;
   }
 }
@@ -64,7 +64,9 @@ function parseArticleContent() {
   const articleContainer = document.querySelector("div#maincontent");
 
   if (!articleContainer) {
-    console.error('Could not find the main content container <div id="maincontent">.');
+    console.error(
+      '[Parser] Could not find the main content container <div id="maincontent">.',
+    );
     return [];
   }
 
@@ -136,8 +138,8 @@ function parseGuardianArticle() {
         console.log("--- Article Content ---");
         console.log(articleContent);
     } else {
-        console.error("Failed to extract any article content.");
+        console.error("[Parser] Failed to extract any article content.");
     }
+	
+	return articleContent;
 }
-
-parseGuardianArticle()

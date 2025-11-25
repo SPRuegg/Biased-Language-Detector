@@ -176,6 +176,6 @@ function parseNBCArticle() {
 	} else {
 		console.error("[Parser] Failed to extract any article content.");
 	}
+	
+	return articleContent;
 }
-
-parseNBCArticle()

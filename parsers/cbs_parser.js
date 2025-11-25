@@ -145,6 +145,6 @@ function parseCBSArticle() {
     } else {
         console.error("Failed to extract any article content.");
     }
+	
+	return articleContent;
 }
-
-parseCBSArticle()
