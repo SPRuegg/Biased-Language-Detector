@@ -85,7 +85,7 @@ Rules:
 	# Push JSON data into the userPayload table from the LLM response.
 	try:
 		response = client.responses.create(
-				model="gpt-4.1-mini",
+				model="gpt-5-mini",
 				input=[
 					{
 						"role": "system",
@@ -171,6 +171,7 @@ def analyzeBias(paragraphs: List[str]) -> List[Dict[str, Any]]:
 
 	print("[Log] Done!")
 	return merged
+
 
 
 
