@@ -71,7 +71,7 @@ Rules:
 - ALWAYS include an entry for every paragraph you receive.
 - Use "none" when no bias type clearly applies.
 - Keep "reason" short (1-2 sentences).
-- DO NOT detect bias from quoted statements. Just detect bias from what the writer of the article says. If you detect bias from a statement like '"This is very bad," said John Doe.' Then the results will not be accurate. 
+- DO NOT detect bias from quotes. They do not reflect the article writer's true thoughts. If you detect bias from a statement like '"This is very bad," said John Doe.' Then the results will not be accurate.
 """
 
 	# Set up JSON table from paragraphs list
@@ -171,6 +171,7 @@ def analyzeBias(paragraphs: List[str]) -> List[Dict[str, Any]]:
 
 	print("[Log] Done!")
 	return merged
+
 
 
 
