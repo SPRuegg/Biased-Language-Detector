@@ -85,7 +85,7 @@ Rules:
 	# Push JSON data into the userPayload table from the LLM response.
 	try:
 		response = client.responses.create(
-				model="gpt-5-mini",
+				model="gpt-4.1-mini",
 				input=[
 					{
 						"role": "system",
@@ -96,8 +96,8 @@ Rules:
 						"content": json.dumps(userPayload, ensure_ascii=False)
 					}
 				],
-				reasoning={"effort": "low"},
-				max_output_tokens=200000,
+				temperature=0,
+				max_output_tokens=100000,
 			)
 	except Exception as e:
 		print("!! LLM ERROR !!", repr(e))
@@ -171,6 +171,7 @@ def analyzeBias(paragraphs: List[str]) -> List[Dict[str, Any]]:
 
 	print("[Log] Done!")
 	return merged
+
 
 
 
