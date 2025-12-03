@@ -2,176 +2,179 @@
  * This is the logic for printing text from the parsers.
  *
  * @author Jude Rorie
+ * @author Shane Ruegg
  * @date 10/30/2025
+ * @modified 12/01/2025
  *
  */
 
-const output = document.getElementById('output');
-const urlText = document.getElementById('url');
+const output = document.getElementById("output");
+const urlText = document.getElementById("url");
 
 /*
  * Main logic executed once Chrome identifies the active tab.
  * Queries the current active tab, verifies it's a valid news article.
- * injects script to extract HTML, loads custom parser, extracts paragraphs.
+ * injects the specific parser script, and extracts paragraphs.
  *
  * @param {object[]} tabs - Array of active tabs returned by Chrome
  */
 chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-	const tab = tabs[0];
-	if (!tab || !tab.url) {
-		output.textContent = 'No active tab detected.'; // Update UI message
-		return; // Stop execution if no tab or missing URL
-	}
+  const tab = tabs[0];
+  if (!tab || !tab.url) {
+    output.textContent = "No active tab detected."; // Update UI message
+    return; // Stop execution if no tab or missing URL
+  }
 
-	const url = tab.url; // Store page URL
-	const parsedUrl = new URL(url);
-	
-	urlText.textContent = parsedUrl.origin;
-	
-	let site = 'null';
-	
-	// Validate that the tab is a valid news article URL using regex
-	if (url.includes("bbc.co.uk") || url.includes("bbc.com")) {
-		site = 'bbc';
-	} else if (url.includes("nbc") || url.includes("nbcnews.com")) {
-		site = 'nbc';
-	} else if (url.includes("cbsnews.com")) {
-		site = 'cbs';
-	} else if (url.includes("foxnews.com") || url.includes("fox.com")) {
-		site = 'fox';
-	} else if (url.includes("cnn.com")) {
-		site = 'cnn';
-	} else if (url.includes("theguardian.com")) {
-		site = 'guardian';
-	}
-	
-	if (site === 'null') {
-		output.textContent = 'This is not a valid article.';
-		return;
-	}
+  const url = tab.url; // Store page URL
+  const parsedUrl = new URL(url);
 
-	output.textContent = 'Parsing article...';
+  urlText.textContent = parsedUrl.origin;
 
-	try {
-		/**
-		 * Inject content script to retrieve the page's HTML source by executing
-		 * document.documentElement.outerHTML inside the tab.
-		 */
+  let site = "null";
 
-		const [{ result: html }] = await chrome.scripting.executeScript({
-			target: { tabId: tab.id },
-			func: () => document.documentElement.outerHTML
-		});
+  // Validate that the tab is a valid news article URL
+  if (url.includes("bbc.co.uk") || url.includes("bbc.com")) {
+    site = "bbc";
+  } else if (url.includes("nbc") || url.includes("nbcnews.com")) {
+    site = "nbc";
+  } else if (url.includes("cbsnews.com")) {
+    site = "cbs";
+  } else if (url.includes("foxnews.com") || url.includes("fox.com")) {
+    site = "fox";
+  } else if (url.includes("cnn.com")) {
+    site = "cnn";
+  } else if (url.includes("theguardian.com")) {
+    site = "guardian";
+  }
 
-		// Create hidden iframe to safely parse HTML without polluting popup DOM
-		const iframe = document.createElement('iframe');
-		iframe.style.display = 'none';
-		document.body.appendChild(iframe);
+  if (site === "null") {
+    output.textContent = "This is not a valid article.";
+    return;
+  }
 
-		const doc = iframe.contentDocument;
+  output.textContent = "Parsing article...";
 
-		// Write the scraped HTML into the new iframe context
-		doc.open();
-		doc.write(html);
-		doc.close();
+  try {
+    // Inject the specific parser file (e.g., parsers/bbc_parser.js)
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ["parsers/" + site + "_parser.js"],
+      });
+    } catch (fileError) {
+      console.warn(
+        `[Popup] Could not inject parser file for ${site}. It might be missing. Proceeding to fallback scraper.`,
+        fileError,
+      );
+    }
 
-		// Load scripts
-		const script = doc.createElement('script');
-		script.src = chrome.runtime.getURL('parsers/' + site + '_parser.js');
-		
-		// --- script.onload ---
-		/**
-		 * Executes when parser script has loaded inside iframe.
-		 * Attempts custom parsing functions, falls back to raw scraping.
-		 */
-		script.onload = () => {
-			try {
-				// Parse text based on article type
-				let parserFunc;
-				
-				if (site === 'bbc') {
-					parserFunc = doc.defaultView.parseBBCArticle;
-				} else if (site === 'nbc') {
-					parserFunc = doc.defaultView.parseNBCArticle;
-				} else if (site === 'cnn') {
-					parserFunc = doc.defaultView.parseCNNArticle;
-				} else if (site === 'cbs') {
-					parserFunc = doc.defaultView.parseCBSArticle;
-				} else if (site === 'fox') {
-					parserFunc = doc.defaultView.parseFoxArticle;
-				} else if (site === 'guardian') {
-					parserFunc = doc.defaultView.parseGuardianArticle;
-				}
-				
-				let paragraphs = [];
+    // Execute the extraction logic inside the tab
+    const [{ result: paragraphs }] = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      func: extractArticleContentInTab,
+      args: [site],
+    });
 
-				// If parser function exists, call it
-				if (parserFunc) {
-					const result = parserFunc();
+    // Handle results
+    if (paragraphs && paragraphs.length > 0) {
+      output.textContent = "Analyzing...";
+      console.log("[Popup] Extracted paragraphs:", paragraphs);
+      try {
+        // Get Bias Data
+        const annotations = await analyzeBias(paragraphs);
 
-					if (Array.isArray(result)) {
-						console.log("[Parser] Parsing...");
-						paragraphs = result
-						.filter(
-							item =>
-								item &&
-								// Check for strings
-								typeof item.text === "string" &&
-								item.text.trim() &&
-								// Ignore non-text items
-								item.type !== "image" && item.type !== "video" && item.type !== "embed"
-						)
-						.map(item => item.text.trim());
+        // Render UI Bias Logic / View
+        renderBiasResults(annotations);
+
+        // Highlight Page Highlighter Logic
+        await highlightBiasInPage(tab.id, annotations);
+      } catch (err) {
+        console.error(err);
+        output.textContent = "Failed to analyze bias.";
+      }
+    } else {
+      output.textContent = "Could not extract text content.";
+      console.error("[Popup] No paragraphs returned.");
+    }
+  } catch (error) {
+    console.error("[Popup] Execution error:", error);
+    output.textContent = "Execution error.";
+  }
+});
+
+/**
+ * This function runs inside of the web page (content script context).
+ * It attempts to call the specific parser function if it exists,
+ * otherwise it will go to raw scraping.
+ * @param {string} site - The site identifier
+ * @returns {string[]} Array of paragraph strings
+ */
+function extractArticleContentInTab(site) {
+  let results = [];
+
+  // Map site names to their global parser functions
+  const parserFunctions = {
+    bbc: "parseBBCArticle",
+    nbc: "parseNBCArticle",
+    cbs: "parseCBSArticle",
+    fox: "parseFoxArticle",
+    cnn: "parseCNNArticle",
+    guardian: "parseGuardianArticle",
+  };
+
+  const funcName = parserFunctions[site];
+
+  // Specialized Parser
+  if (funcName && typeof window[funcName] === "function") {
+    try {
+      console.log(`[Content] Running ${funcName}...`);
+      let rawContent = window[funcName]();
+      // Sanitize for text
+      if (Array.isArray(rawContent)) {
+        const validItems = rawContent.filter(item =>
+					item &&
+					typeof item.text === 'string' &&
+					item.text.trim() &&
+					!['image', 'video', 'embed'].includes(item.type)
+				);
+
+				// Iterate and TAG elements
+				validItems.forEach((item, index) => {
+					// Use the 'element' reference returned by the updated parsers
+					if (item.element && item.element instanceof Element) {
+						item.element.setAttribute('data-bias-id', index);
 					}
-					
-					console.log("[Parser] Specialized parser results:", paragraphs);
-				}
-				
-				// Backup parser that just extracts all paragraph elements, in case specialized parser does not work
-				if (!paragraphs || paragraphs.length === 0) {
-					console.warn('[Parser] Falling back to raw paragraph scraping.');
+					results.push(item.text.trim());
+				});
+      }
+    } catch (e) {
+      console.error("[Content] Specialized parser failed:", e);
+    }
+  }
 
-					// Try to detect primary article container elements
-					const article = doc.querySelector(
-						'main article, main [data-component="article-body"], article, [data-component="text-block"]'
-					);
+  // Raw Scraper
+  if (results.length === 0) {
+    console.warn('[Content] Specialized parser returned no text. Using fallback scraper.');
 
-					// If found, collect all <p> text inside
-					if (article) {
-						paragraphs = Array.from(article.querySelectorAll('p'))
-							.map(p => p.innerText.trim())
-							.filter(Boolean);
-					}
-					
-					console.log("[Parser] Backup parser results:", paragraphs);
-				}
-				
-				// Display bias results to user
-				output.textContent = 'Analyzing...';
-				analyzeBias(paragraphs);
-				
-			} catch (error) {
-				console.error('[Parser] Runtime error:', error);
-				output.textContent = 'Error parsing article.';
-			}
-		};
-		
-		// Append parser script to iframe once body exists
-		if (doc.body) {
-			doc.body.appendChild(script);
+		// Try to detect primary article container elements
+		const article = document.querySelector(
+			'main article, main [data-component="article-body"], article, [data-component="text-block"], #article-body, [itemprop="articleBody"]'
+		);
+
+		let elements = [];
+		if (article) {
+			elements = Array.from(article.querySelectorAll('p'));
 		} else {
-			doc.addEventListener(
-				'DOMContentLoaded',
-				() => {
-					doc.body.appendChild(script);
-				},
-				{ once: true }
-			);
+			elements = Array.from(document.querySelectorAll('p'));
 		}
 
-	} catch (error) {
-		// Catch any script execution failures
-		console.error('[Parser] Execution error:', error);
-		output.textContent = 'Execution error.';
-	}
-});
+		elements = elements.filter(p => p.innerText.trim().length > 0);
+
+		elements.forEach((el, index) => {
+			el.setAttribute('data-bias-id', index);
+			results.push(el.innerText.trim());
+		});
+  }
+
+  return results;
+}
