@@ -39,7 +39,7 @@ You MUST output valid JSON only, no explanation text.
 Given a list of paragraphs, you will detect these labels:
 
 - "None": No notable bias.
-- "Personal Opinion": Expresses a subjective personal view or feeling. Note that this is specifically from the writer of the article and NOT from directly quoted statements, which tend to have biased language. 
+- "Personal Opinion": Expresses a subjective personal view or feeling. Note that this should NOT come from quoted statements rather from the article writer themselves. 
 - "Ad Hominem": Attacks a person or group instead of addressing the argument.
 - "Hasty Generalization": Uses sweeping or absolute generalizations from limited evidence.
 - "Strawman": Argues against an oversimplified or otherwise distorted view of the information.
@@ -71,7 +71,7 @@ Rules:
 - ALWAYS include an entry for every paragraph you receive.
 - Use "None" when no bias type clearly applies.
 - Keep "Reason" short (1-2 sentences).
-- DO NOT detect bias from quotes. They do not reflect the article writer's true thoughts. If you detect bias from a statement like '"This is very bad," said John Doe.' Then the results will not be accurate.
+- DO NOT detect bias from quoted statements. They do not reflect the article writer's thoughts, which is what we are specifically detecting. If you detect bias from a statement like '"This is very bad," said John Doe.' then ignore and place "None" on the label.
 """
 
 	# Set up JSON table from paragraphs list
@@ -171,6 +171,7 @@ def analyzeBias(paragraphs: List[str]) -> List[Dict[str, Any]]:
 
 	print("[Log] Done!")
 	return merged
+
 
 
 
