@@ -10,6 +10,8 @@
 
 const output = document.getElementById("output");
 const urlText = document.getElementById("url");
+const similarSection = document.getElementById("similar-articles-section");
+const similarContainer = document.getElementById("similar-articles");
 
 /*
  * Main logic executed once Chrome identifies the active tab.
@@ -86,6 +88,25 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
         // Render UI Bias Logic / View
         renderBiasResults(annotations);
 
+		// Get similar articles
+		try {
+			if (similarSection && similarContainer) {
+				// Set find similar articles status
+				similarSection.classList.remove("hidden");
+				similarContainer.textContent = "Finding similar articles...";
+			}
+
+			// Grab parsed URL, fetch 3 similar articles
+			const topic = tab.title || parsedUrl.pathname || "";
+			const similar = await fetchSimilarArticles(topic, tab.url, 3);
+
+			renderSimilarArticles(similar);
+		} catch (e) {
+			console.error("[Popup] Similar articles error:", e);
+		}
+
+		await highlightBiasInPage(tab.id, annotations);
+		
         // Highlight Page Highlighter Logic
         await highlightBiasInPage(tab.id, annotations);
       } catch (err) {
