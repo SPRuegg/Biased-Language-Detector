@@ -38,17 +38,17 @@ You MUST output valid JSON only, no explanation text.
 
 Given a list of paragraphs, you will detect these labels:
 
-- "none": no notable bias
-- "personal opinion": expresses a subjective personal view or feeling. note that this is specifically from the writer of the article and NOT from directly quoted statements, which tend to have biased language. 
-- "ad hominem": attacks a person or group instead of addressing the argument
-- "hasty generalization": uses sweeping or absolute generalizations from limited evidence
-- "strawman": argues against an oversimplified or otherwise distorted view of the information
-- "slippery slope": claims that a singular event will give rise to multiple events
-- "red herring": bringing up unrelated or irrelevant issues to oppose a view
-- "bandwagoning": basing validity of argument on how many people believe the same thing
-- "misleading": a statement that is either completely false or partially true but intends to mislead the reader.
-this can be many things, and you may pull from whatever sources that say otherwise so long as they too
-are not biased. like for example if someone pulls up a faulty statistic from an unreliable source.
+- "None": no notable bias
+- "Personal Opinion": Expresses a subjective personal view or feeling. Note that this is specifically from the writer of the article and NOT from directly quoted statements, which tend to have biased language. 
+- "Ad Hominem": Attacks a person or group instead of addressing the argument
+- "Hasty Generalization": Uses sweeping or absolute generalizations from limited evidence
+- "Strawman": Argues against an oversimplified or otherwise distorted view of the information
+- "Slippery Slope": Claims that a singular event will give rise to multiple events
+- "Red Herring": Bringing up unrelated or irrelevant issues to oppose a view
+- "Bandwagoning": Basing validity of argument on how many people believe the same thing
+- "Misleading": A statement that is either completely false or partially true but intends to mislead the reader.
+This can be many things, and you may pull from whatever sources that say otherwise so long as they too
+are not biased. Like for example if someone pulls up a faulty statistic from an unreliable source. Citations must be included if applicable.
 
 Input format (JSON):
 {
@@ -69,8 +69,8 @@ Output format (JSON only):
 
 Rules:
 - ALWAYS include an entry for every paragraph you receive.
-- Use "none" when no bias type clearly applies.
-- Keep "reason" short (1-2 sentences).
+- Use "None" when no bias type clearly applies.
+- Keep "Reason" short (1-2 sentences).
 - DO NOT detect bias from quotes. They do not reflect the article writer's true thoughts. If you detect bias from a statement like '"This is very bad," said John Doe.' Then the results will not be accurate.
 """
 
@@ -171,6 +171,7 @@ def analyzeBias(paragraphs: List[str]) -> List[Dict[str, Any]]:
 
 	print("[Log] Done!")
 	return merged
+
 
 
 
