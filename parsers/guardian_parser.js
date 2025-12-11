@@ -33,18 +33,18 @@ function parseGuardianMetadata() {
 		if (!Array.isArray(metadataArray) || metadataArray.length === 0) {
 			console.error("[Parser] JSON-LD metadata is not an array or is empty.");
 			return null;
-		} else {
-			console.log("--- Summary Info ---");
-			console.log(`Title: ${metadata.title}`);
-			console.log(`Author: ${metadata.author}`);
-			console.log(`Description: ${metadata.description}`);
-			console.log(`Published: ${metadata.datePublished}`);
-			console.log(`Modified: ${metadata.dateModified}`);
-			console.log("\n");
 		}
 		
 		const metadata = metadataArray[0];
 
+		console.log("--- Summary Info ---");
+		console.log(`Title: ${metadata.title}`);
+		console.log(`Author: ${metadata.author}`);
+		console.log(`Description: ${metadata.description}`);
+		console.log(`Published: ${metadata.datePublished}`);
+		console.log(`Modified: ${metadata.dateModified}`);
+		console.log("\n");
+		
 		// The description is not contained in the first element.
 		const descriptionTag = document.querySelector('meta[name="description"]');
 
