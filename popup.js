@@ -33,21 +33,23 @@ chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
 
 	urlText.textContent = parsedUrl.origin;
 
-	let site = "null";
+	let site = null;
 
 	// Validate that the tab is a valid news article URL
-	if (url.includes("bbc.co.uk") || url.includes("bbc.com")) {
-		site = "bbc";
-	} else if (url.includes("nbc") || url.includes("nbcnews.com")) {
-		site = "nbc";
-	} else if (url.includes("cbsnews.com")) {
-		site = "cbs";
-	} else if (url.includes("foxnews.com") || url.includes("fox.com")) {
-		site = "fox";
-	} else if (url.includes("cnn.com")) {
-		site = "cnn";
-	} else if (url.includes("theguardian.com")) {
-		site = "guardian";
+	const siteTable = {
+		bbc:        ["bbc.co.uk", "bbc.com"],
+		nbc:        ["nbc", "nbcnews.com"],
+		cbs:        ["cbsnews.com"],
+		fox:        ["foxnews.com", "fox.com"],
+		cnn:        ["cnn.com"],
+		guardian:   ["theguardian.com"]
+	};
+
+	for (const [key, substrings] of Object.entries(siteTable)) {
+		if (substrings.some(s => url.includes(s))) {
+			site = key;
+			break;
+		}
 	}
 
 	if (site === "null") {
